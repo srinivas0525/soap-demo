@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="f6e6f797-aca6-4d00-a657-a37b23c8bd98" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="ab8b96a3-f9ad-45df-8a74-167288dffd62" >
+		<wsc:connection wsdlLocation="http://www.dneonline.com/calculator.asmx?wsdl" service="Calculator" port="CalculatorSoap" address="http://www.dneonline.com/calculator.asmx">
+			<wsc:web-service-security actor="http://schemas.xmlsoap.org/soap/actor/next" />
+		</wsc:connection>
+	</wsc:config>
+	<flow name="soap-demoFlow" doc:id="fdc96b3b-02f3-45c4-a3fd-675e34500e2f" >
+		<http:listener doc:name="Listener" doc:id="ee8a0253-b959-4b8a-b54b-cb97c486b6ba" config-ref="HTTP_Listener_config" path="/{operation}"/>
+		<set-variable value="#[attributes.uriParams.operation]" doc:name="Set Variable" doc:id="9c927819-1fc7-4e2e-8215-a56c195a00a8" variableName="sOperation"/>
+		<choice doc:name="Choice" doc:id="41714fd3-d481-4921-bcf2-b951052cf7a1" >
+			<when expression='#[attributes.uriParams.operation == "Add"]'>
+				<ee:transform doc:name="Transform Message" doc:id="1637c5a5-1c81-40ed-a74e-01630510f8a8" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://tempuri.org/
+---
+{
+	ns0#Add: {
+		ns0#intA: attributes.queryParams.num1,
+		ns0#intB: attributes.queryParams.num2
+	}
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<wsc:consume operation="Add" doc:name="Consume" doc:id="60fcbf9b-4161-480c-bd79-89e1b2373cae" config-ref="Web_Service_Consumer_Config" />
+				<ee:transform doc:name="Add_Result" doc:id="cc26725b-2eff-480d-a536-4de9441dcae9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://tempuri.org/
+
+output application/json
+---
+{
+	"Operation": vars.sOperation,
+	"Result": payload.body.ns0#AddResponse.ns0#AddResult
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression='attributes.uriParams.operation == "Subtract"'>
+				<ee:transform doc:name="Transform Message" doc:id="eddd5c2a-7376-4628-9415-07b072902554" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://tempuri.org/
+---
+{
+	ns0#Subtract: {
+		ns0#intA: attributes.queryParams.num1,
+		ns0#intB: attributes.queryParams.num2
+	}
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<wsc:consume operation="Subtract" doc:name="Consume" doc:id="e7abea5d-f917-4100-835a-0e38f6f09520" config-ref="Web_Service_Consumer_Config" />
+				<ee:transform doc:name="Subtract_Result" doc:id="3be19bb5-14bf-477a-bad6-a309de05a794" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://tempuri.org/
+
+output application/json
+---
+{
+	"Operation": vars.sOperation,
+	"Result": payload.body.ns0#SubtractResponse.ns0#SubtractResult
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression='attributes.uriParams.operation == "Multiply"'>
+				<ee:transform doc:name="Transform Message" doc:id="427aa2c4-0060-4cb9-b7ec-b6565b852773" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://tempuri.org/
+---
+{
+	ns0#Multiply: {
+		ns0#intA: attributes.queryParams.num1,
+		ns0#intB: attributes.queryParams.num2
+	}
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<wsc:consume doc:id="38c72f53-d131-4e14-80ca-f6e1aac96985" config-ref="Web_Service_Consumer_Config" operation="Multiply" />
+				<ee:transform doc:name="Multiply_Result" doc:id="aff763f0-30ca-46d4-92e1-232b2d81cf24" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://tempuri.org/
+
+output application/json
+---
+{
+	"Operation": vars.sOperation,
+	"Result": payload.body.ns0#MultiplyResponse.ns0#MultiplyResult
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<when expression='attributes.uriParams.operation == "Divide"'>
+				<ee:transform doc:name="Transform Message" doc:id="20a98280-b6a2-4f22-9879-b7e283089cf0" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://tempuri.org/
+---
+{
+	ns0#Divide: {
+		ns0#intA: attributes.queryParams.num1,
+		ns0#intB: attributes.queryParams.num2
+	}
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<wsc:consume operation="Divide" doc:name="Consume" doc:id="b12764c3-6d4a-4d90-b5bb-fb1be8ec903a" config-ref="Web_Service_Consumer_Config" />
+				<ee:transform doc:name="Division_Result" doc:id="77ef2806-42f7-4474-983a-1d2dff6b87cd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://tempuri.org/
+
+output application/json
+---
+{
+	"Operation": vars.sOperation,
+	"Result": payload.body.ns0#DivideResponse.ns0#DivideResult}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="9b13a54f-0eb6-4d9f-9b03-6c72490a4bc0" message="Invalid Operation"/>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="4ffd997c-b6ec-4012-bbcb-faedab1e4bfc" message="#[payload]" />
+	</flow>
+</mule>
